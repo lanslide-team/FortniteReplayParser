@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "MySql": "Server=dbhost;Database=dbname;User=dbname;Password=dbpass;TreatTinyAsBoolean=false;"
+  }
+}
