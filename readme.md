@@ -22,6 +22,85 @@ A .NET console application that scans a directory of Fortnite replay files, extr
 4. Player statistics are extracted and saved.
 5. The replay file is moved to `replays/processed/` with a unique timestamped filename.
 
+## Folder Structure
+
+```text
+replays/
+├── match1.replay
+├── match2.replay
+└── processed/
+    ├── 20260706-2100-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.replay
+    └── ...
+```
+
+## Requirements
+
+- .NET 8.0 or later
+- Microsoft SQL Server (or compatible SQL Server instance)
+- Database configured through `Database.ConnectToDatabase()`
+- Fortnite replay parsing libraries:
+  - FortniteReplayReader
+  - FortniteReplayParser
+
+## Quick Start
+
+1. Clone the repository.
+2. Rename `appsettings.json.rename` to `appsettings.json`.
+3. Update the database connection string.
+4. Create the database if it does not already exist.
+5. Place `.replay` files into the `replays/` folder.
+6. Run:
+
+```bash
+dotnet run
+```
+
+## Configuration
+
+Before running the application, rename:
+
+```text
+appsettings.json.rename
+```
+
+to:
+
+```text
+appsettings.json
+```
+
+Then update the database connection settings inside `appsettings.json`:
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=FortniteReplayParser;User Id=username;Password=password;TrustServerCertificate=True;"
+  }
+}
+```
+
+### Example SQL Server Configuration
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=192.168.1.100;Database=FortniteReplayParser;User Id=sa;Password=YourStrongPasswordHere;TrustServerCertificate=True;"
+  }
+}
+```
+
+### Example LocalDB Configuration
+
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=FortniteReplayParser;Trusted_Connection=True;"
+  }
+}
+```
+
+After updating the connection string, ensure the target database exists and that the configured account has permission to read and write data.
+
 ## Database Records
 
 ### FortniteReplay
@@ -53,12 +132,41 @@ Stores player-level information:
 | CreatedAt | Record creation timestamp |
 | UpdatedAt | Last update timestamp |
 
-## Folder Structure
+## Running
 
-```text
-replays/
-├── match1.replay
-├── match2.replay
-└── processed/
-    ├── 20260706-2100-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.replay
-    └── ...
+Build the application:
+
+```bash
+dotnet build
+```
+
+Run the application:
+
+```bash
+dotnet run
+```
+
+## Replay Processing Logic
+
+The application attempts to identify matches using:
+
+1. `GameData.GameSessionId`
+2. `Header.Guid` (fallback when the session ID is unavailable)
+
+This ensures that older or incomplete replay files can still be uniquely identified.
+
+When a replay is processed:
+
+- A match record is created if one does not already exist.
+- Existing match records are updated when the same session is reprocessed.
+- Existing player results are removed and rebuilt from the replay data.
+- Bot players are skipped.
+- The original replay file is moved to the `processed` folder after successful processing.
+
+## Notes
+
+- Bot players are excluded from stored results.
+- Existing match results are fully replaced when a replay is reprocessed.
+- Processed replay files are renamed using a timestamp and GUID to prevent filename collisions.
+- Failed file moves are logged but do not stop processing of subsequent replay files.
+- Match start times are converted to the configured local timezone when available.
