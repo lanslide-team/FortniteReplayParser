@@ -1,4 +1,5 @@
 bin/
+fornite-replay-parser/
 obj/
 replays/
 appsettings.json
